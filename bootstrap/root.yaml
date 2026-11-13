@@ -1,0 +1,20 @@
+# 루트 앱: apps/ 디렉터리의 Application들을 관리한다 (app-of-apps).
+# apps/에 파일을 넣고 push하면 켜지고, apps-disabled/로 옮기면 꺼진다.
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: root
+  namespace: argocd
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/easydong02/lakehouse-lab.git
+    targetRevision: main
+    path: apps
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true

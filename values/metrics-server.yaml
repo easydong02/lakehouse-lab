@@ -1,0 +1,6 @@
+# kind의 kubelet 인증서는 자체 서명이라 검증을 건너뛴다 (실습 전용)
+args:
+  - --kubelet-insecure-tls
+resources:
+  requests: {cpu: 50m, memory: 64Mi}
+  limits: {memory: 128Mi}
