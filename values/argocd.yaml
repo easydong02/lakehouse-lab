@@ -1,0 +1,42 @@
+# Argo CD (차트 argo-cd 10.17.2 / Argo CD v3.6.1)
+# 실습용으로 가볍게: dex·notifications 끔, UI는 port-forward + HTTP
+dex:
+  enabled: false
+notifications:
+  enabled: false
+
+configs:
+  params:
+    # port-forward로 http://localhost:8080 접속 (TLS 경고 없이)
+    server.insecure: true
+  cm:
+    # Git 변경 감지 주기 (기본 120s)
+    timeout.reconciliation: 60s
+    # app-of-apps에서 자식 Application의 Health를 부모가 볼 수 있게 한다.
+    # (1.8부터 기본에서 빠진 health check를 되살리는 공식 문서의 Lua)
+    resource.customizations.health.argoproj.io_Application: |
+      hs = {}
+      hs.status = "Progressing"
+      hs.message = ""
+      if obj.status ~= nil then
+        if obj.status.health ~= nil then
+          hs.status = obj.status.health.status
+          if obj.status.health.message ~= nil then
+            hs.message = obj.status.health.message
+          end
+        end
+      end
+      return hs
+
+controller:
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {memory: 768Mi}
+repoServer:
+  resources:
+    requests: {cpu: 50m, memory: 128Mi}
+    limits: {memory: 512Mi}
+server:
+  resources:
+    requests: {cpu: 50m, memory: 64Mi}
+    limits: {memory: 256Mi}
