@@ -1,0 +1,26 @@
+# SeaweedFS 4.53 (차트 4.53.0) - all-in-one 모드
+# master + volume + filer + S3 게이트웨이를 Pod 하나로 띄운다.
+# 개별 컴포넌트(StatefulSet)는 끈다.
+master:
+  enabled: false
+volume:
+  enabled: false
+filer:
+  enabled: false
+s3:
+  enabled: false
+
+allInOne:
+  enabled: true
+  s3:
+    enabled: true
+    enableAuth: true
+    # scripts/create-secrets.sh 가 만든 Secret (키: seaweedfs_s3_config)
+    existingConfigSecret: seaweedfs-s3-config
+  # 기본값 emptyDir이면 Pod 재시작 때 데이터가 사라진다 → PVC로 바꾼다
+  data:
+    type: persistentVolumeClaim
+    size: 20Gi
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {memory: 1Gi}
