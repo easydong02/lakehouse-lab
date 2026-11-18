@@ -1,0 +1,18 @@
+# 클러스터 안에서 S3·네트워크를 점검하는 도구 Pod
+# kubectl -n storage exec -it toolbox -c aws -- aws --endpoint-url http://seaweedfs-all-in-one:8333 s3 ls
+# kubectl -n storage exec -it toolbox -c net -- bash   (dig, curl, nc, tcpdump)
+apiVersion: v1
+kind: Pod
+metadata:
+  name: toolbox
+  namespace: storage
+spec:
+  containers:
+    - name: aws
+      image: amazon/aws-cli:2.40.0
+      command: ["sleep", "infinity"]
+      envFrom:
+        - secretRef: {name: lakehouse-s3}
+    - name: net
+      image: nicolaka/netshoot:v0.16
+      command: ["sleep", "infinity"]
