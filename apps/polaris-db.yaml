@@ -8,7 +8,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/CHANGE-ME/lakehouse-lab.git
+    repoURL: https://github.com/easydong02/lakehouse-lab.git
     targetRevision: main
     path: manifests/polaris-db
   destination:
