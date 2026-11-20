@@ -1,0 +1,23 @@
+# Polaris 메타스토어용 PostgreSQL (CloudNativePG 1.30)
+# instances: 2 → primary 1 + standby 1 (Lab 12에서 failover 실습)
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: polaris-db
+  namespace: polaris
+spec:
+  instances: 2
+  imageName: ghcr.io/cloudnative-pg/postgresql:18.6-system-trixie
+  storage:
+    size: 2Gi
+  resources:
+    requests: {cpu: 100m, memory: 256Mi}
+    limits: {memory: 512Mi}
+  bootstrap:
+    initdb:
+      database: polaris
+      owner: polaris
+      # Polaris는 스키마를 직접 만들지 않는다 (CREATE SCHEMA는 DBA 몫).
+      # 기본 스키마 이름 POLARIS_SCHEMA → PostgreSQL에서는 소문자 polaris_schema
+      postInitApplicationSQL:
+        - CREATE SCHEMA IF NOT EXISTS polaris_schema AUTHORIZATION polaris
