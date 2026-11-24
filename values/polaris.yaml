@@ -1,0 +1,48 @@
+# Apache Polaris 1.8.0 (차트 1.8.0)
+image:
+  tag: "1.8.0"
+
+# 메타스토어: CNPG가 만든 Secret(polaris-db-app)을 그대로 쓴다.
+# CNPG 앱 Secret에는 username, password, jdbc-uri 키가 들어 있다.
+persistence:
+  type: relational-jdbc
+  relationalJdbc:
+    secret:
+      name: polaris-db-app
+      username: username
+      password: password
+      jdbcUrl: jdbc-uri
+
+# Polaris 서버가 메타데이터 파일을 읽고 쓸 때 쓰는 S3 자격 증명
+storage:
+  secret:
+    name: polaris-s3
+    awsAccessKeyId: access-key
+    awsSecretAccessKey: secret-key
+
+# 토큰 서명 키를 Secret으로 고정한다.
+# (지정하지 않으면 Pod마다 키를 새로 만들어 재시작 때 기존 토큰이 모두 무효가 된다)
+authentication:
+  tokenBroker:
+    type: symmetric-key
+    secret:
+      name: polaris-token-broker
+      symmetricKey:
+        secretKey: symmetric.key
+
+realmContext:
+  realms:
+    - POLARIS
+
+extraEnv:
+  - name: AWS_REGION
+    value: ap-northeast-2
+  # S3 호환 스토리지에서 AWS SDK v2 기본 체크섬 헤더로 인한 오류를 피한다
+  - name: AWS_REQUEST_CHECKSUM_CALCULATION
+    value: when_required
+  - name: AWS_RESPONSE_CHECKSUM_VALIDATION
+    value: when_required
+
+resources:
+  requests: {cpu: 200m, memory: 512Mi}
+  limits: {memory: 1Gi}

@@ -1,0 +1,30 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: polaris
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://downloads.apache.org/polaris/helm-chart
+      chart: polaris
+      targetRevision: 1.8.0
+      helm:
+        releaseName: polaris
+        valueFiles:
+          - $values/values/polaris.yaml
+    - repoURL: https://github.com/easydong02/lakehouse-lab.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: polaris
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
