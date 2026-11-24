@@ -1,0 +1,33 @@
+# Polaris 메타스토어 부트스트랩 (최초 1회만 실행)
+# 스키마 테이블 생성 + realm POLARIS + root 계정 생성
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: polaris-bootstrap
+  namespace: polaris
+spec:
+  backoffLimit: 0
+  ttlSecondsAfterFinished: 3600
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: admin-tool
+          image: apache/polaris-admin-tool:1.8.0
+          args:
+            - bootstrap
+            - -r
+            - POLARIS
+            - -c
+            - POLARIS,root,$(POLARIS_ROOT_SECRET)
+          env:
+            - name: POLARIS_PERSISTENCE_TYPE
+              value: relational-jdbc
+            - name: QUARKUS_DATASOURCE_USERNAME
+              valueFrom: {secretKeyRef: {name: polaris-db-app, key: username}}
+            - name: QUARKUS_DATASOURCE_PASSWORD
+              valueFrom: {secretKeyRef: {name: polaris-db-app, key: password}}
+            - name: QUARKUS_DATASOURCE_JDBC_URL
+              valueFrom: {secretKeyRef: {name: polaris-db-app, key: jdbc-uri}}
+            - name: POLARIS_ROOT_SECRET
+              valueFrom: {secretKeyRef: {name: polaris-root, key: root-secret}}
