@@ -1,25 +1,30 @@
-# Kubeflow Spark Operator 2.6.0
-# SparkApplication은 spark 네임스페이스에서만 받는다.
-# 이 네임스페이스에 서비스 계정 spark-operator-spark 와 RBAC가 만들어진다.
-spark:
-  jobNamespaces:
-    - spark
-
-controller:
-  resources:
-    requests: {cpu: 50m, memory: 128Mi}
-    limits: {memory: 256Mi}
-
-# volumes, envFrom 같은 Pod 커스터마이징은 webhook이 처리한다 (끄지 말 것)
-webhook:
-  enable: true
-  resources:
-    requests: {cpu: 50m, memory: 64Mi}
-    limits: {memory: 256Mi}
-
-prometheus:
-  metrics:
-    enable: true
-  # PodMonitor CRD가 없을 때 true면 렌더링이 실패한다 → Lab 9에서 true로 바꾼다
-  podMonitor:
-    create: false
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: spark-operator
+  namespace: argocd
+  finalizers:
+    - resources-finalizer.argocd.argoproj.io
+spec:
+  project: default
+  sources:
+    - repoURL: https://kubeflow.github.io/spark-operator
+      chart: spark-operator
+      targetRevision: 2.6.0
+      helm:
+        releaseName: spark-operator
+        valueFiles:
+          - $values/values/spark-operator.yaml
+    - repoURL: https://github.com/easydong02/lakehouse-lab.git
+      targetRevision: main
+      ref: values
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: spark-operator
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+      - CreateNamespace=true
+      - ServerSideApply=true
