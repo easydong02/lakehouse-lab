@@ -48,7 +48,7 @@ mgmt POST /catalogs "$(cat <<EOF
     "endpoint": "${S3_ENDPOINT}",
     "pathStyleAccess": true,
     "stsUnavailable": true,
-    "region": "us-east-1"
+    "region": "ap-northeast-2"
   }
 }}
 EOF

@@ -53,7 +53,7 @@ for ns in storage spark trino; do
   secret "$ns" lakehouse-s3 \
     --from-literal=AWS_ACCESS_KEY_ID="${S3_ACCESS_KEY}" \
     --from-literal=AWS_SECRET_ACCESS_KEY="${S3_SECRET_KEY}" \
-    --from-literal=AWS_REGION=us-east-1
+    --from-literal=AWS_REGION=ap-northeast-2
 done
 
 # Polaris root 계정 비밀번호와 토큰 서명 키
