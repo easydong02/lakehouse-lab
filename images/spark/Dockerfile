@@ -23,8 +23,10 @@ ADD --chmod=644 ${MAVEN}/org/apache/commons/commons-pool2/${COMMONS_POOL2_VERSIO
 
 # 실습 스크립트
 COPY --chmod=755 bin/ /opt/lab/bin/
-COPY --chmod=644 conf/ /opt/lab/conf/
-COPY --chmod=644 jobs/ /opt/lab/jobs/
+COPY --chmod=u=rwX,go=rX conf/ /opt/lab/conf/
+COPY --chmod=u=rwX,go=rX jobs/ /opt/lab/jobs/
+# COPY --chmod=644 conf/ /opt/lab/conf/
+# COPY --chmod=644 jobs/ /opt/lab/jobs/
 ENV PATH="/opt/lab/bin:${PATH}"
 
 USER spark
