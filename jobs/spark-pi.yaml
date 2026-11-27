@@ -1,0 +1,26 @@
+# 연기 테스트: 커스텀 이미지가 로컬 레지스트리에서 잘 내려오고 오퍼레이터가 동작하는지
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: spark-pi
+  namespace: spark
+spec:
+  type: Scala
+  mode: cluster
+  image: localhost:5001/lakehouse/spark:4.1.4-iceberg1.12.0
+  imagePullPolicy: IfNotPresent
+  mainClass: org.apache.spark.examples.SparkPi
+  mainApplicationFile: local:///opt/spark/examples/jars/spark-examples.jar
+  arguments: ["1000"]
+  sparkVersion: 4.1.4
+  timeToLiveSeconds: 600
+  restartPolicy:
+    type: Never
+  driver:
+    cores: 1
+    memory: 512m
+    serviceAccount: spark-operator-spark
+  executor:
+    instances: 1
+    cores: 1
+    memory: 512m

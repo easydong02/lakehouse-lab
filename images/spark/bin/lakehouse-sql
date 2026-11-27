@@ -1,0 +1,12 @@
+#!/bin/bash
+# Pod 안에서 Polaris 카탈로그에 붙는 spark-sql 셸 (local 모드)
+# 사용: lakehouse-sql            → 대화형
+#       lakehouse-sql -e "SQL"   → 한 줄 실행
+set -euo pipefail
+cd /tmp   # spark-sql이 만드는 metastore_db, spark-warehouse를 쓰기 가능한 곳에 둔다
+exec /opt/spark/bin/spark-sql \
+  --master "local[2]" \
+  --driver-memory 1g \
+  --properties-file /opt/lab/conf/polaris.conf \
+  --conf "spark.sql.catalog.polaris.credential=${POLARIS_CREDENTIAL:?POLARIS_CREDENTIAL 환경 변수가 없습니다}" \
+  "$@"
