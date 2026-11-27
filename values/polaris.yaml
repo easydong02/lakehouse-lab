@@ -42,6 +42,14 @@ extraEnv:
     value: when_required
   - name: AWS_RESPONSE_CHECKSUM_VALIDATION
     value: when_required
+  # stsUnavailable 모드에서 Polaris 서버의 S3FileIO는 AWS SDK 기본 체인으로 키를 찾는다
+  - name: AWS_ACCESS_KEY_ID
+    valueFrom:
+      secretKeyRef: {name: polaris-s3, key: access-key}
+  - name: AWS_SECRET_ACCESS_KEY
+    valueFrom:
+      secretKeyRef: {name: polaris-s3, key: secret-key}
+  - name: AWS_REQUEST_CHECKSUM_CALCULATION
 
 resources:
   requests: {cpu: 200m, memory: 512Mi}
