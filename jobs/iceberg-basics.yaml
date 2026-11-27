@@ -1,0 +1,89 @@
+# Lab 6: Polaris 카탈로그로 Iceberg 테이블 만들기 → 쓰기 → 수정 → 스키마 변경 → 타임 트래블
+# 다시 실행하면 테이블을 지우고(PURGE) 처음부터 만든다:
+#   kubectl -n spark delete sparkapp iceberg-basics --ignore-not-found && kubectl apply -f jobs/iceberg-basics.yaml
+apiVersion: sparkoperator.k8s.io/v1beta2
+kind: SparkApplication
+metadata:
+  name: iceberg-basics
+  namespace: spark
+spec:
+  type: Python
+  pythonVersion: "3"
+  mode: cluster
+  image: localhost:5001/lakehouse/spark:4.1.4-iceberg1.12.0
+  imagePullPolicy: IfNotPresent
+  mainApplicationFile: local:///opt/lab/jobs/run_sql.py
+  sparkVersion: 4.1.4
+  timeToLiveSeconds: 3600
+  restartPolicy:
+    type: Never
+  arguments:
+    - |
+      CREATE NAMESPACE IF NOT EXISTS lake;
+      DROP TABLE IF EXISTS lake.orders PURGE;
+      CREATE TABLE lake.orders (
+        order_id BIGINT,
+        customer STRING,
+        amount   DECIMAL(10,2),
+        status   STRING,
+        order_ts TIMESTAMP)
+      USING iceberg
+      PARTITIONED BY (days(order_ts));
+      SHOW TBLPROPERTIES lake.orders;
+      INSERT INTO lake.orders VALUES
+        (1, 'kim',  12000.00, 'PAID', TIMESTAMP '2026-11-01 10:00:00'),
+        (2, 'lee',  35000.00, 'PAID', TIMESTAMP '2026-11-01 11:30:00'),
+        (3, 'park',  8000.00, 'PAID', TIMESTAMP '2026-11-02 09:10:00');
+      ALTER TABLE lake.orders CREATE TAG first_load;
+      INSERT INTO lake.orders VALUES
+        (4, 'choi', 21000.00, 'PAID', TIMESTAMP '2026-11-02 14:00:00'),
+        (5, 'jung', 15000.00, 'PAID', TIMESTAMP '2026-11-03 08:45:00');
+      UPDATE lake.orders SET status = 'REFUNDED' WHERE order_id = 2;
+      DELETE FROM lake.orders WHERE order_id = 3;
+      ALTER TABLE lake.orders ADD COLUMN channel STRING;
+      INSERT INTO lake.orders VALUES (6, 'han', 5000.00, 'PAID', TIMESTAMP '2026-11-03 09:00:00', 'mobile');
+      SELECT * FROM lake.orders ORDER BY order_id;
+      SELECT * FROM lake.orders VERSION AS OF 'first_load' ORDER BY order_id;
+      SELECT snapshot_id, parent_id, operation, committed_at,
+             summary['added-data-files'] AS added_files,
+             summary['deleted-data-files'] AS deleted_files
+        FROM lake.orders.snapshots ORDER BY committed_at;
+      SELECT partition, file_path, record_count, file_size_in_bytes FROM lake.orders.files;
+      SELECT path, length, partition_spec_id, added_snapshot_id FROM lake.orders.manifests;
+  sparkConf:
+    spark.sql.extensions: org.apache.iceberg.spark.extensions.IcebergSparkSessionExtensions
+    spark.sql.defaultCatalog: polaris
+    spark.sql.catalog.polaris: org.apache.iceberg.spark.SparkCatalog
+    spark.sql.catalog.polaris.type: rest
+    spark.sql.catalog.polaris.uri: http://polaris.polaris.svc:8181/api/catalog
+    spark.sql.catalog.polaris.oauth2-server-uri: http://polaris.polaris.svc:8181/api/catalog/v1/oauth/tokens
+    spark.sql.catalog.polaris.warehouse: lakehouse
+    spark.sql.catalog.polaris.scope: PRINCIPAL_ROLE:ALL
+    spark.sql.catalog.polaris.token-refresh-enabled: "true"
+    spark.sql.catalog.polaris.io-impl: org.apache.iceberg.aws.s3.S3FileIO
+    spark.sql.catalog.polaris.s3.endpoint: http://seaweedfs-all-in-one.storage.svc:8333
+    spark.sql.catalog.polaris.s3.path-style-access: "true"
+    spark.sql.catalog.polaris.client.region: ap-northeast-2
+    # Prometheus가 수집할 수 있게 드라이버 UI에 메트릭 노출 (Lab 9)
+    spark.ui.prometheus.enabled: "true"
+    spark.metrics.conf.*.sink.prometheusServlet.class: org.apache.spark.metrics.sink.PrometheusServlet
+    spark.metrics.conf.*.sink.prometheusServlet.path: /metrics/driver/prometheus/
+  driver:
+    cores: 1
+    memory: 768m
+    serviceAccount: spark-operator-spark
+    envFrom:
+      - secretRef: {name: lakehouse-s3}
+      - secretRef: {name: polaris-spark}
+    env:
+      - {name: AWS_REQUEST_CHECKSUM_CALCULATION, value: when_required}
+      - {name: AWS_RESPONSE_CHECKSUM_VALIDATION, value: when_required}
+  executor:
+    instances: 1
+    cores: 1
+    memory: 768m
+    envFrom:
+      - secretRef: {name: lakehouse-s3}
+    env:
+      - {name: AWS_REQUEST_CHECKSUM_CALCULATION, value: when_required}
+      - {name: AWS_RESPONSE_CHECKSUM_VALIDATION, value: when_required}
