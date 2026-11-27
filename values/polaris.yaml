@@ -49,8 +49,6 @@ extraEnv:
   - name: AWS_SECRET_ACCESS_KEY
     valueFrom:
       secretKeyRef: {name: polaris-s3, key: secret-key}
-  - name: AWS_REQUEST_CHECKSUM_CALCULATION
-
 resources:
   requests: {cpu: 200m, memory: 512Mi}
   limits: {memory: 1Gi}
